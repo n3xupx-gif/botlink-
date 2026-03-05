@@ -1,337 +1,253 @@
 #!/usr/bin/env python3
 # ============================================
-# TELEGRAM BOT SCANNER - ULTRA HACKER EDITION V2
+# TELEGRAM BOT SCANNER - ULTRA HUNTER EDITION
 # Dev: @lagatech
-# Features: Matrix UI, Webapp Grabber, Webhook Detector, Mass Scan
+# Feature: Web Source Downloader & Pro UI
 # ============================================
 
 import asyncio
 import os
+import sys
 import time
-import random
-import datetime
+import requests
 from telethon import TelegramClient, functions, types
-from telethon.errors import SessionPasswordNeededError, UsernameNotOccupiedError, UsernameInvalidError
-from telethon.tl import types as tl_types
-
-# Cross-platform color support
-try:
-    from colorama import init, Fore, Style
-    init(autoreset=True)
-    GREEN = Fore.GREEN
-    RED = Fore.RED
-    CYAN = Fore.CYAN
-    YELLOW = Fore.YELLOW
-    MAGENTA = Fore.MAGENTA
-    WHITE = Fore.WHITE
-    RESET = Style.RESET_ALL
-except ImportError:
-    print("[-] Installing colorama for colors...")
-    os.system("pip install colorama")
-    from colorama import init, Fore, Style
-    init(autoreset=True)
-    GREEN = Fore.GREEN
-    RED = Fore.RED
-    CYAN = Fore.CYAN
-    YELLOW = Fore.YELLOW
-    MAGENTA = Fore.MAGENTA
-    WHITE = Fore.WHITE
-    RESET = Style.RESET_ALL
+from telethon.errors import SessionPasswordNeededError
 
 # =============================
-# Config
-# =============================
-SESSION_NAME = "hacker_session"
-CONFIG_FILE = "config.txt"
-REPORT_DIR = "intel_reports"
-
-# =============================
-# Hacker UI System
+# Colors & Styles
 # =============================
 
-def print_logo():
-    os.system("clear" if os.name != "nt" else "cls")
-    logo = f"""{GREEN}
+GREEN = "\033[92m"
+RED = "\033[91m"
+CYAN = "\033[96m"
+YELLOW = "\033[93m"
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+RESET = "\033[0m"
+
+# =============================
+# Updated Logo
+# =============================
+
+logo = f"""{GREEN}
+{BOLD}
 ██╗      █████╗  ██████╗  █████╗ ████████╗███████╗ ██████╗██╗  ██╗
 ██║     ██╔══██╗██╔════╝ ██╔══██╗╚══██╔══╝██╔════╝██╔════╝██║  ██║
 ██║     ███████║██║  ███╗███████║   ██║   █████╗  ██║     ███████║
 ██║     ██╔══██║██║   ██║██╔══██║   ██║   ██╔══╝  ██║     ██╔══██║
 ███████╗██║  ██║╚██████╔╝██║  ██║   ██║   ███████╗╚██████╗██║  ██║
 ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝
-        {CYAN}TELEGRAM BOT SCANNER - ULTRA EDITION V2{RESET}
-        {YELLOW}💀 [DEV: @lagatech] | [FEATURES: WEBHOOK, WEBAPP, MASS SCAN]{RESET}
+
+      ⚡ TELEGRAM BOT SCANNER & DOWNLOADER ⚡
+           ULTRA EDITION v2.0
+
+        DEV : @lagatech
+{RESET}
 """
-    print(logo)
-
-def matrix_effect(lines=5):
-    """Simulates matrix rain for dramatic effect"""
-    chars = "01@#$%^&*abcdef"
-    for _ in range(lines):
-        line = "".join(random.choice(chars) for _ in range(40))
-        print(f"{GREEN}{line}{RESET}")
-        time.sleep(0.05)
-
-def loading_bar(text="Scanning", duration=2):
-    symbols = ["▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"]
-    steps = 20
-    print(f"{CYAN}{text}: ", end="")
-    for i in range(steps):
-        time.sleep(duration / steps)
-        progress = int((i + 1) / steps * 100)
-        bar_fill = int((i + 1) / steps * 10)
-        bar = "█" * bar_fill + " " * (10 - bar_fill)
-        print(f"{GREEN}[{bar}] {progress}%{RESET}", end="\r")
-    print(f"{GREEN}[██████████] 100%{RESET} - Complete")
 
 # =============================
-# API System
+# Advanced Animation System
+# =============================
+
+def print_banner():
+    os.system("clear")
+    print(logo)
+
+def animate_text(text, delay=0.03):
+    for char in text:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(delay)
+    print()
+
+def loading_spin(text="Processing", duration=3):
+    animation_frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    end_time = time.time() + duration
+    i = 0
+    while time.time() < end_time:
+        frame = animation_frames[i % len(animation_frames)]
+        print(f"{CYAN}{frame} {text}...{RESET}", end="\r")
+        time.sleep(0.1)
+        i += 1
+    print(f"{GREEN}✔ {text} Complete!    {RESET}")
+
+def progress_bar(task="Downloading", duration=5):
+    bar_length = 40
+    for i in range(bar_length + 1):
+        time.sleep(duration / bar_length)
+        percent = 100 * i // bar_length
+        filled = '█' * i
+        empty = '░' * (bar_length - i)
+        sys.stdout.write(f'\r{CYAN}{task}: [{YELLOW}{filled}{CYAN}{empty}] {GREEN}{percent}%{RESET}')
+        sys.stdout.flush()
+    print()
+
+# =============================
+# API System with Guide
 # =============================
 
 def get_api():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE) as f:
+    if os.path.exists("config.txt"):
+        with open("config.txt") as f:
             lines = f.read().splitlines()
-            if len(lines) >= 2:
-                return lines[0], lines[1]
+            api_id = lines[0].strip()
+            api_hash = lines[1].strip()
+            return api_id, api_hash
 
-    print(YELLOW + "\n[!] API Configuration Required\n" + RESET)
-    api_id = input("API ID  : ")
-    api_hash = input("API HASH: ")
-
-    with open(CONFIG_FILE, "w") as f:
-        f.write(f"{api_id}\n{api_hash}")
+    print(f"{YELLOW}{BOLD}{'='*50}")
+    print(" ⚠️  API CREDENTIALS REQUIRED")
+    print(f"{'='*50}{RESET}\n")
     
+    print(f"{CYAN}[ GUIDE ] Where to get API ID & HASH?{RESET}")
+    print(f"1. Visit: {UNDERLINE}https://my.telegram.org{RESET}")
+    print(f"2. Login with your Phone Number (Telegram will send OTP to your Telegram App).")
+    print(f"3. Click on {BOLD}'API development tools'{RESET}.")
+    print(f"4. Fill the form (App title & Short name can be anything).")
+    print(f"5. Copy your {GREEN}api_id{RESET} and {GREEN}api_hash{RESET} here.\n")
+
+    api_id = input(f"{BOLD}👉 Enter API ID : {RESET}")
+    api_hash = input(f"{BOLD}👉 Enter API HASH : {RESET}")
+
+    with open("config.txt", "w") as f:
+        f.write(api_id + "\n")
+        f.write(api_hash + "\n")
+    
+    print(f"\n{GREEN}Credentials Saved Successfully!{RESET}\n")
     return api_id, api_hash
 
 # =============================
-# Intelligence Functions
+# Web Downloader Function
 # =============================
 
-def detect_webhooks(text):
-    """Detects potential webhook URLs in text"""
-    hooks = []
-    keywords = ["webhook", "api/webhooks", "discord.com/api", "discohook", "glitch"]
-    if text:
-        for line in text.split('\n'):
-            if "http" in line and any(k in line.lower() for k in keywords):
-                hooks.append(line.strip())
-    return hooks
-
-async def scan_single_bot(client, bot_username, save_report=False):
+def download_website(url, filename):
     try:
-        # Phase 1: Identification
-        loading_bar(f"Identifying {bot_username}", 1)
-        
-        entity = await client.get_entity(bot_username)
-        
-        # Check if it's actually a bot
-        if not entity.bot:
-            print(f"{RED}[!] @{bot_username} is not a bot!{RESET}")
-            return
+        if not url.startswith("http"):
+            url = "https://" + url
 
-        # Phase 2: Deep Scan
-        result = await client(functions.users.GetFullUserRequest(id=entity))
+        print(f"\n{CYAN}[*] Connecting to server...{RESET}")
+        
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            # Add .html extension if not present
+            if not filename.endswith(('.html', '.htm', '.php')):
+                filename += ".html"
+
+            progress_bar(task=f"Saving {filename}", duration=2)
+            
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(response.text)
+            
+            print(f"\n{GREEN}{BOLD}✅ SUCCESS!{RESET}")
+            print(f"File saved as: {YELLOW}{filename}{RESET}")
+            print(f"Size: {len(response.text)} bytes")
+        else:
+            print(f"{RED}❌ Failed to download. Server returned code: {response.status_code}{RESET}")
+
+    except Exception as e:
+        print(f"{RED}[ERROR] Connection Failed: {e}{RESET}")
+
+# =============================
+# Bot Scanner
+# =============================
+
+async def scan_bot(client, bot_username):
+    try:
+        loading_spin("Fetching Bot Data", 2)
+        
+        bot = await client.get_entity(bot_username)
+        result = await client(functions.users.GetFullUserRequest(id=bot))
         user = result.users[0]
         bot_info = result.full_user.bot_info
 
-        report_data = []
-        header = f"\n{GREEN}════════════════ 🤖 BOT INTEL 🤖 ════════════════{RESET}"
-        print(header)
-        
-        # Basic Intel
-        name = user.first_name + (user.last_name or "")
-        username = f"@{user.username}" if user.username else "None"
-        user_id = user.id
-        
-        print(f"{CYAN}🆔 Bot ID     :{RESET} {user_id}")
-        print(f"{CYAN}📛 Name       :{RESET} {name}")
-        print(f"{CYAN}👤 Username   :{RESET} {username}")
-        print(f"{CYAN}✅ Verified   :{RESET} {GREEN}Yes{RESET}" if user.verified else f"{CYAN}✅ Verified   :{RESET} {RED}No{RESET}")
-        print(f"{CYAN}⚠️ Scam Flag  :{RESET} {RED}Yes{RESET}" if user.scam else f"{CYAN}⚠️ Scam Flag  :{RESET} {GREEN}Clean{RESET}")
+        print(f"\n{GREEN}{BOLD}╔══════════════════════════════╗")
+        print(f"║        🤖 BOT INFO           ║")
+        print(f"╚══════════════════════════════╝{RESET}")
 
-        # WebApp & Menu Link Detection
-        print(f"\n{YELLOW}[>] Analyzing Access Points...{RESET}")
-        
-        webapp_found = False
-        
-        # 1. Check Menu Button
-        if bot_info and bot_info.menu_button:
-            menu = bot_info.menu_button
-            if isinstance(menu, types.BotMenuButton):
-                print(f"{GREEN}🔗 Menu Button :{RESET} {menu.url}")
-                report_data.append(f"Menu URL: {menu.url}")
-                webapp_found = True
+        print(f"👤 Name      : {BOLD}{user.first_name}{RESET}")
+        print(f"🔗 Username  : @{user.username if user.username else 'None'}")
+        print(f"🆔 Bot ID    : {user.id}")
+        print(f"✅ Verified  : {user.verified}")
+        print(f"🚩 Scam Flag : {RED}{user.scam}{RESET}")
 
-        # 2. Check Description for hidden links
-        desc = bot_info.description if bot_info else ""
-        if "http" in desc:
-            print(f"{MAGENTA}🌐 Description Links Found:{RESET}")
-            import re
-            links = re.findall(r'(https?://[^\s]+)', desc)
-            for link in links:
-                print(f"   -> {link}")
-                report_data.append(f"Desc Link: {link}")
-                
-                # Webhook Check
-                hooks = detect_webhooks(link)
-                if hooks:
-                    print(f"{RED}💀 WEBHOOK DETECTED!{RESET}")
-                    for h in hooks:
-                        print(f"   {RED}[!] {h}{RESET}")
+        target_link = None
 
-        # 3. Check Inline Buttons (Common for WebApps)
-        # Note: Real-time message checking would require interacting with the bot.
-        # This static analysis focuses on available metadata.
+        if bot_info:
+            menu_button = bot_info.menu_button
+            if menu_button and isinstance(menu_button, types.BotMenuButton):
+                target_link = menu_button.url
+                print(f"\n{CYAN}🌐 Website Link Found: {UNDERLINE}{target_link}{RESET}")
+            else:
+                print(f"\n{YELLOW}⚠️ Menu Link Not Found (Bot might not have a web app).{RESET}")
 
-        # Commands Analysis
-        if bot_info and bot_info.commands:
-            print(f"\n{YELLOW}[>] Parsing Bot Commands...{RESET}")
-            for cmd in bot_info.commands[:10]: # Limit output
-                print(f"   💻 /{cmd.command} - {cmd.description}")
-        
-        print(f"{GREEN}══════════════════════════════════════════════════{RESET}")
-        
-        # Save Report Logic
-        if save_report:
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{REPORT_DIR}/{bot_username}_{timestamp}.txt"
-            os.makedirs(REPORT_DIR, exist_ok=True)
-            with open(filename, "w") as f:
-                f.write(f"BOT INTEL REPORT\n")
-                f.write(f"Target: {username}\nID: {user_id}\n")
-                f.write(f"Verified: {user.verified}\nScam: {user.scam}\n")
-                f.write(f"Description:\n{desc}\n")
-            print(f"{CYAN}[💾] Report saved to {filename}{RESET}")
+            if bot_info.commands:
+                print(f"\n{BOLD}📜 Available Commands:{RESET}")
+                for cmd in bot_info.commands:
+                    print(f"   ➤ /{cmd.command} - {cmd.description}")
+
+        print(f"{GREEN}──────────────────────────────{RESET}")
+
+        # Download Option
+        if target_link:
+            print(f"\n{BOLD}{YELLOW}[?] Do you want to download the website code?{RESET}")
+            choice = input(f"Type {GREEN}'yes'{RESET} to download or press Enter to skip: ").lower()
+            
+            if choice == "yes" or choice == "y":
+                custom_name = input(f"📝 Enter file name to save (e.g., index): ")
+                if custom_name.strip():
+                    download_website(target_link, custom_name)
+                else:
+                    print(f"{RED}Invalid Name. Cancelled.{RESET}")
 
     except Exception as e:
-        print(f"{RED}[ERROR] Failed to scan {bot_username}: {str(e)}{RESET}")
-
-async def mass_scan(client):
-    print(f"{YELLOW}\n[!] MASS BOT SCANNER [!]{RESET}")
-    print("Enter bot usernames separated by space or comma (or file.txt):")
-    targets_input = input(f"{CYAN}Targets > {RESET}").strip()
-    
-    targets = []
-    if targets_input.endswith(".txt") and os.path.exists(targets_input):
-        with open(targets_input, "r") as f:
-            targets = [line.strip() for line in f if line.strip()]
-    else:
-        targets = [t.strip() for t in targets_input.replace(',', ' ').split()]
-    
-    print(f"{GREEN}[*] Queued {len(targets)} bots for scanning...{RESET}")
-    matrix_effect(3)
-    
-    for bot in targets:
-        await scan_single_bot(client, bot, save_report=True)
-        time.sleep(1) # Prevent flooding
-
-async def search_crawler(client):
-    """Auto Bot Finder (Telegram search crawler)"""
-    query = input(f"{CYAN}Enter Search Keyword > {RESET}")
-    print(f"{YELLOW}[*] Searching Telegram for bots matching: {query}...{RESET}")
-    
-    try:
-        # Using messages.searchGlobal to find public bots
-        result = await client(functions.messages.SearchGlobalRequest(
-            q=query,
-            filter=types.InputMessagesFilterEmpty(),
-            min_date=0,
-            max_date=0,
-            offset_rate=0,
-            offset_peer=types.InputPeerEmpty(),
-            offset_id=0,
-            limit=20
-        ))
-        
-        found_bots = set()
-        # Iterate through found chats/users
-        for chat in result.chats:
-            if hasattr(chat, 'bot') and chat.bot:
-                found_bots.add(chat.username)
-        
-        if found_bots:
-            print(f"{GREEN}[+] Found {len(found_bots)} bots!{RESET}")
-            for bot in found_bots:
-                print(f"   - @{bot}")
-            
-            choice = input(f"\n{CYAN}Scan all found bots? (y/n) > {RESET}")
-            if choice.lower() == 'y':
-                for bot in found_bots:
-                    await scan_single_bot(client, bot)
-        else:
-            print(f"{RED}[-] No bots found for this keyword.{RESET}")
-            
-    except Exception as e:
-        print(f"{RED}[ERROR] Search failed: {e}{RESET}")
+        print(f"{RED}[ERROR] {e}{RESET}")
 
 # =============================
 # MAIN SYSTEM
 # =============================
 
 async def main():
-
-    print_logo()
+    print_banner()
     
-    # Create report dir
-    if not os.path.exists(REPORT_DIR):
-        os.makedirs(REPORT_DIR)
-
     api_id, api_hash = get_api()
 
-    client = TelegramClient(SESSION_NAME, api_id, api_hash)
+    print(f"\n{CYAN}📱 LOGIN SECTION{RESET}")
+    print("──────────────────────────────")
+    phone = input("Enter Phone Number (with country code): ")
 
-    print(f"{CYAN}[*] Connecting to Telegram Servers...{RESET}")
+    client = TelegramClient("lagatech_session", api_id, api_hash)
+
     await client.connect()
 
     if not await client.is_user_authorized():
-        print(YELLOW + "\n[!] New Login Required\n" + RESET)
-        phone = input("📱 Phone Number (with country code): ")
+        print(f"\n{CYAN}[*] Sending OTP...{RESET}")
+        print(f"{YELLOW}💡 Check your Telegram App for the OTP code (SMS might not work).{RESET}")
         
         try:
             await client.send_code_request(phone)
-            code = input("🔑 Enter OTP: ")
-            
-            try:
-                await client.sign_in(phone, code)
-            except SessionPasswordNeededError:
-                password = input("🔒 2FA Password: ")
-                await client.sign_in(password=password)
-                
-            print(GREEN + "\n[✓] Login Successful!" + RESET)
-            
+            code = input("👉 Enter OTP Code: ")
+            await client.sign_in(phone, code)
+        except SessionPasswordNeededError:
+            print(f"{YELLOW}🔐 Two-Step Verification Enabled.{RESET}")
+            password = input("👉 Enter 2FA Password: ")
+            await client.sign_in(password=password)
         except Exception as e:
-            print(RED + f"\n[!] Login Failed: {e}" + RESET)
+            print(f"{RED}Login Failed: {e}{RESET}")
             return
 
-    # Main Menu
+    loading_spin("Logging In", 2)
+    print(f"{GREEN}\n✅ Login Successful! Welcome to the System.\n{RESET}")
+
     while True:
-        print(f"\n{WHITE}══════════════ 💀 MAIN MENU 💀 ══════════════{RESET}")
-        print(f"  {CYAN}1.{RESET} Scan Single Bot")
-        print(f"  {CYAN}2.{RESET} Mass Bot Scanner (List/File)")
-        print(f"  {CYAN}3.{RESET} Auto Bot Finder (Search Crawler)")
-        print(f"  {CYAN}4.{RESET} Exit")
-        print(f"{WHITE}═══════════════════════════════════════════════{RESET}")
-        
-        choice = input(f"{MAGENTA}Select Option > {RESET}")
+        print(f"\n{BOLD}{CYAN}─── NEW SCAN ───{RESET}")
+        bot_username = input("🤖 Enter Bot Username (or type 'exit'): ")
 
-        if choice == "1":
-            target = input(f"{CYAN}Enter Bot Username > {RESET}")
-            await scan_single_bot(client, target, save_report=True)
-        
-        elif choice == "2":
-            await mass_scan(client)
-        
-        elif choice == "3":
-            await search_crawler(client)
-        
-        elif choice == "4":
-            print(f"{GREEN}\n[👋] Closing Connection. Goodbye, Hacker.{RESET}")
+        if bot_username.lower() == "exit":
+            print(f"\n{YELLOW}Exiting Tool... Goodbye Hacker! 👋{RESET}")
             break
-        
-        else:
-            print(f"{RED}[!] Invalid Option{RESET}")
 
-    await client.disconnect()
+        await scan_bot(client, bot_username)
 
 # =============================
 # RUN
@@ -339,6 +255,11 @@ async def main():
 
 if __name__ == "__main__":
     try:
+        if sys.platform.startswith('win'):
+            # For Windows color support
+            os.system('color')
+        
         asyncio.run(main())
+
     except KeyboardInterrupt:
-        print(f"\n{RED}[!] Force Closed by User{RESET}")
+        print(f"\n{RED}Force Closed by User.{RESET}")
